@@ -2,66 +2,133 @@
 
 import Image from "next/image"
 import Link from "next/link"
+import { useEffect, useState } from "react"
+import { collection, getDocs } from "firebase/firestore"
+import { db } from "./firebase"
+
+interface Concert {
+  id: string
+  date: string
+  city: string
+  country: string
+  venue: string
+  status: "disponible" | "sold out"
+}
 
 export default function HomePage() {
-  const concerts = [
-    {
-      venue: "ZÉNITH de Paris",
-      date: "14/04/2026",
-    },
-    {
-      venue: "WEMBLEY ARENA",
-      location: "Londres",
-      date: "15/09/2025",
-    },
-    {
-      venue: "Opéra GARNIER",
-      location: "Paris",
-      date: "12/11/2025",
-    },
-    {
-      venue: "ZIGGO DOME",
-      date: "08/01/2026",
-    },
-    {
-      venue: "ANOTHER HALL",
-      location: "Berlin",
-      date: "10/10/2026",
-    },
-  ]
+  const [concerts, setConcerts] = useState<Concert[]>([])
+  const [loading, setLoading] = useState<boolean>(true)
+
+  useEffect(() => {
+    const fetchConcerts = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "concerts"))
+        const concertsData: Concert[] = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          date: doc.data().date,
+          city: doc.data().city,
+          country: doc.data().country,
+          venue: doc.data().venue,
+          status: doc.data().status
+        }))
+        setConcerts(concertsData)
+      } catch (error) {
+        console.error("Error fetching concerts:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchConcerts()
+  }, [])
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    })
+  }
+
+  const handleBuyTicket = (concertId: string) => {
+    // This is just for demonstration - no actual functionality
+    console.log(`Buy ticket clicked for concert ${concertId}`)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+      </div>
+    )
+  }
 
   return (
     <div className="relative">
       <div className="px-4 pb-8">
-        {/* Section supérieure : Artiste + Concerts - UNIQUEMENT POUR MOBILE SELON MAQUETTE */}
+        {/* Upper section: Artist + Concerts */}
         <div className="flex flex-row items-start gap-3">
-          {/* Colonne Artiste : plus large et plus haute */}
+          {/* Artist column */}
           <div className="w-7/12 flex-shrink-0 relative z-30 -mt-10">
             <Image
-              src="/images/artist-vald-color.png" // L'image rouge, comme demandé
+              src="/images/artist-vald-color.png"
               alt="Photo de l'artiste Vald"
               width={400}
-              height={800} // Ratio plus haut pour que l'image soit plus longue
+              height={800}
               className="w-full h-auto"
               priority
             />
           </div>
 
-          {/* Colonne Concerts : plus fine et scrollable */}
+          {/* Concerts column */}
           <div className="w-5/12 h-[75vh] overflow-y-auto custom-scrollbar pt-6">
-            {concerts.map((concert, index) => (
-              <Link href="/villes" key={index} className="block mb-3">
-                <div className="border border-white/20 rounded-lg p-2 bg-black/50 backdrop-blur-sm relative overflow-hidden hover:border-white/50 transition-colors">
-                  <div className="absolute top-0 right-0 w-16 h-full pointer-events-none z-0">
-                    <Image src="/images/smoke-effect.png" alt="Smoke effect" fill className="object-cover opacity-10" />
-                  </div>
-                  <div className="relative z-10">
-                    <h3 className="text-sm font-bold text-white uppercase leading-tight">{concert.venue}</h3>
-                    <div className="text-white font-mono text-xs whitespace-nowrap mt-1">{concert.date}</div>
+            {concerts.length === 0 ? (
+              <div className="text-white text-center py-4">Aucun concert disponible</div>
+            ) : (
+              concerts.map((concert) => (
+                <div key={concert.id} className="block mb-3">
+                  <div className={`border rounded-lg p-2 bg-black/50 backdrop-blur-sm relative overflow-hidden transition-colors ${
+                    concert.status === "sold out" 
+                      ? "border-red-500/50 hover:border-red-500/80" 
+                      : "border-green-500/50 hover:border-green-500/80"
+                  }`}>
+                    <div className="absolute top-0 right-0 w-16 h-full pointer-events-none z-0">
+                      <Image src="/images/smoke-effect.png" alt="Smoke effect" fill className="object-cover opacity-10" />
+                    </div>
+                    <div className="relative z-10">
+                      <h3 className="text-sm font-bold text-white uppercase leading-tight">
+                        {concert.venue}
+                      </h3>
+                      <div className="text-white font-mono text-xs mt-1">
+                        {formatDate(concert.date)}
+                      </div>
+                      <div className="text-white font-mono text-xs mt-1">
+                        {concert.city}, {concert.country}
+                      </div>
+                      <div className="flex justify-between items-center mt-2">
+                        <div className={`text-xs font-bold ${
+                          concert.status === "sold out" ? "text-red-500" : "text-green-500"
+                        }`}>
+                          {concert.status.toUpperCase()}
+                        </div>
+                        <button
+                          onClick={() => handleBuyTicket(concert.id)}
+                          disabled={concert.status === "sold out"}
+                          className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                            concert.status === "sold out"
+                              ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                              : "bg-red-600 hover:bg-red-700 text-white"
+                          }`}
+                        >
+                          {concert.status === "sold out" ? "COMPLET" : "BILLETTERIE"}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </Link>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
