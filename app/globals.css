@@ -85,3 +85,16 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #888;
 }
+
+@layer components {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #ffffff;
+    border-radius: 2px;
+  }
+}
