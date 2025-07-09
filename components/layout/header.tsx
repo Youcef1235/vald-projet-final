@@ -22,11 +22,15 @@ export function Header() {
           <Button variant="ghost" size="icon" className="text-white hover:bg-gray-800/50">
             <Menu className="h-6 w-6" />
           </Button>
-          <Link
-            href="/"
-            className="bg-white text-black w-12 h-12 flex items-center justify-center rounded-full text-sm font-bold"
-          >
-            LOGO
+          <Link href="/" className="w-12 h-12 flex items-center justify-center rounded-full overflow-hidden">
+            <Image
+              src="/images/logo.png" // Update this path to your actual logo
+              alt="Website Logo"
+              width={48}
+              height={48}
+              className="object-contain"
+              priority
+            />
           </Link>
         </div>
       </div>
